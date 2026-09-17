@@ -464,6 +464,10 @@ function LoginScreen() {
       console.error("Login failed", error);
       if (error.code === 'auth/popup-closed-by-user') {
         setErrorMsg("การล็อกอินถูกยกเลิก หรือเบราว์เซอร์บล็อกหน้าต่างป๊อปอัป หากคุณใช้งานผ่านมือถือ (เช่น เปิดจากแอปอื่น) แนะนำให้กด 'เปิดในเบราว์เซอร์' (Safari/Chrome) แล้วลองใหม่อีกครั้งครับ");
+      } else if (error.code === 'auth/unauthorized-domain') {
+        setErrorMsg(`โดเมนนี้ยังไม่ได้รับอนุญาตในระบบ Firebase (${window.location.hostname}) กรุณาเพิ่มโดเมนนี้ใน Firebase Console -> Authentication -> Settings -> Authorized domains`);
+      } else if (error.code === 'auth/network-request-failed') {
+        setErrorMsg("การเชื่อมต่อไปยังบริการล็อกอินล้มเหลว (Network Request Failed) กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต");
       } else {
         setErrorMsg("เกิดข้อผิดพลาดในการล็อกอิน: " + (error.message || "Unknown error"));
       }
@@ -501,7 +505,7 @@ function LoginScreen() {
         </button>
 
         <footer className="mt-8 text-center text-xs text-slate-400">
-          เวอร์ชั่น 5.4 17/09/69 10.53
+          เวอร์ชั่น 5.5 17/09/69 13.05
         </footer>
       </div>
     </div>
@@ -754,7 +758,7 @@ function MainApp() {
           {renderContent()}
         </div>
         <footer className="mt-12 py-4 text-center text-xs text-slate-400">
-          เวอร์ชั่น 5.4 17/09/69 10.53
+          เวอร์ชั่น 5.5 17/09/69 13.05
         </footer>
       </main>
     </div>
