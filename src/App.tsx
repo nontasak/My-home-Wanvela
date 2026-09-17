@@ -23,7 +23,6 @@ import {
   LogIn,
   LogOut,
   User as UserIcon,
-  Zap,
   Mail,
   Lock,
   KeyRound,
@@ -119,8 +118,6 @@ import {
 import { 
   signInWithPopup, 
   signInWithCredential,
-  signInAnonymously,
-  updateProfile,
   GoogleAuthProvider, 
   onAuthStateChanged, 
   signOut,
@@ -526,32 +523,12 @@ function LoginScreen() {
     } catch (error: any) {
       console.error("Google login failed", error);
       if (error.code === 'auth/popup-closed-by-user') {
-        setErrorMsg("หน้าต่างเข้าสู่ระบบถูกปิด หรือการเชื่อมต่อถูกยกเลิก (สามารถกดปุ่มเข้าใช้งานด่วนด้านล่างได้ทันทีครับ)");
+        setErrorMsg("หน้าต่างเข้าสู่ระบบถูกปิด หรือการเชื่อมต่อถูกยกเลิก กรุณาลองใหม่อีกครั้ง");
       } else if (error.code === 'auth/unauthorized-domain') {
-        setErrorMsg(`โดเมนนี้ยังไม่ได้รับอนุญาตใน Firebase (${window.location.hostname}) สามารถกดปุ่มเข้าใช้งานด่วนด้านล่างได้ทันทีครับ`);
+        setErrorMsg(`โดเมนนี้ยังไม่ได้รับอนุญาตในระบบ Firebase (${window.location.hostname}) กรุณาเพิ่มโดเมนใน Firebase Console Authorized domains ครับ`);
       } else {
-        setErrorMsg("เชื่อมต่อ Google ไม่สำเร็จ: " + (error.message || "สามารถกดปุ่มเข้าใช้งานด่วนด้านล่างได้ทันทีครับ"));
+        setErrorMsg("เชื่อมต่อ Google ไม่สำเร็จ: " + (error.message || "Unknown error"));
       }
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
-
-  // One-Click Direct Google Access (Bypass popup / ISP blocks completely)
-  const handleBypassLogin = async () => {
-    setErrorMsg(null);
-    setIsLoggingIn(true);
-    try {
-      await setPersistence(auth, browserLocalPersistence);
-      const res = await signInAnonymously(auth);
-      if (res.user && !res.user.displayName) {
-        await updateProfile(res.user, {
-          displayName: "oltree1@gmail.com",
-        });
-      }
-    } catch (error: any) {
-      console.error("Bypass login failed", error);
-      setErrorMsg("เข้าใช้งานไม่สำเร็จ: " + (error.message || "Unknown error"));
     } finally {
       setIsLoggingIn(false);
     }
@@ -567,20 +544,12 @@ function LoginScreen() {
         <p className="text-slate-500 text-sm mb-8">แอพบันทึกรายจ่ายและจัดการของใช้ในบ้าน สำหรับครอบครัว</p>
 
         {errorMsg && (
-          <div className="mb-6 p-4 bg-amber-50 text-amber-900 text-xs rounded-2xl border border-amber-200 text-left leading-relaxed">
-            <div className="font-semibold mb-1 flex items-center gap-1.5 text-amber-800">
-              <AlertCircle size={14} className="text-amber-600 shrink-0" />
-              <span>การเชื่อมต่อ Google ติดขัด</span>
+          <div className="mb-6 p-4 bg-red-50 text-red-700 text-xs rounded-2xl border border-red-200 text-left leading-relaxed flex items-start gap-2">
+            <AlertCircle size={16} className="text-red-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <span className="font-semibold block mb-0.5">การเชื่อมต่อ Google ไม่สำเร็จ</span>
+              <span>{errorMsg}</span>
             </div>
-            <p className="text-slate-600 mb-3">{errorMsg}</p>
-            <button
-              type="button"
-              onClick={handleBypassLogin}
-              className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm"
-            >
-              <Zap size={15} className="fill-amber-300 text-amber-300" />
-              กดปุ่มนี้เพื่อเข้าใช้งานทันที (One-Click)
-            </button>
           </div>
         )}
 
@@ -602,25 +571,14 @@ function LoginScreen() {
             )}
             <span>{isLoggingIn ? 'กำลังเชื่อมต่อ...' : 'เข้าสู่ระบบด้วย Google'}</span>
           </button>
-
-          {/* Easy One-Click Direct Access */}
-          <button
-            type="button"
-            onClick={handleBypassLogin}
-            disabled={isLoggingIn}
-            className="w-full py-3 px-4 rounded-xl bg-sky-50/70 hover:bg-sky-100 text-sky-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
-          >
-            <Zap size={14} className="fill-amber-400 text-amber-500" />
-            <span>เข้าใช้งานด่วนด้วยบัญชี Google (คลิกเดียวเข้าได้ทันที)</span>
-          </button>
         </div>
 
         <p className="mt-6 text-[11px] text-slate-400 leading-relaxed">
-          *ใช้งานได้ทันที ระบบจะจดจำบัญชีและข้อมูลของคุณบนอุปกรณ์นี้โดยอัตโนมัติ
+          *เข้าสู่ระบบด้วยบัญชี Google เพื่อใช้งานและบันทึกข้อมูล
         </p>
 
         <footer className="mt-8 text-center text-xs text-slate-400">
-          เวอร์ชั่น 5.8 17/09/69 13.50
+          เวอร์ชั่น 5.9 17/09/69 14.05
         </footer>
       </div>
     </div>
@@ -873,7 +831,7 @@ function MainApp() {
           {renderContent()}
         </div>
         <footer className="mt-12 py-4 text-center text-xs text-slate-400">
-          เวอร์ชั่น 5.8 17/09/69 13.50
+          เวอร์ชั่น 5.9 17/09/69 14.05
         </footer>
       </main>
     </div>
