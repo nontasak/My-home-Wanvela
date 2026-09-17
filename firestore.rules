@@ -1,0 +1,178 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: expenses
+    // Document ID: auto-generated
+    // Fields:
+    //   - date: string (required, ISO 8601)
+    //   - amount: number (required, positive)
+    //   - category: string (required)
+    //   - description: string (required, max 200 chars)
+    //   - uid: string (required, matches auth.uid)
+    //   - id: string (optional, for client-side tracking)
+    //
+    // Collection: fridgeItems
+    // Document ID: auto-generated
+    // Fields:
+    //   - name: string (required, max 100 chars)
+    //   - expiryDate: string (required, ISO 8601)
+    //   - quantity: number (required, >= 0)
+    //   - unit: string (required, max 20 chars)
+    //   - category: string (required)
+    //   - uid: string (required, matches auth.uid)
+    //   - id: string (optional)
+    //
+    // Collection: supplies
+    // Document ID: auto-generated
+    // Fields:
+    //   - name: string (required, max 100 chars)
+    //   - quantity: number (required, >= 0)
+    //   - unit: string (required, max 20 chars)
+    //   - minThreshold: number (required, >= 0)
+    //   - category: string (required)
+    //   - uid: string (required, matches auth.uid)
+    //   - expiryDate: string (optional)
+    //   - expiryType: string (optional)
+    //   - id: string (optional)
+    //
+    // Collection: maintenanceTasks
+    // Document ID: auto-generated
+    // Fields:
+    //   - title: string (required, max 100 chars)
+    //   - lastDone: string (required, ISO 8601)
+    //   - nextDue: string (required, ISO 8601)
+    //   - notes: string (optional, max 500 chars)
+    //   - uid: string (required, matches auth.uid)
+    //   - id: string (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "oltree1@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string &&
+        (dateStr == "" || dateStr.matches("^\\d{4}-\\d{2}-\\d{2}.*"));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidExpense(data) {
+      return hasRequiredFields(['date', 'amount', 'category', 'description', 'uid']) &&
+             hasOnlyAllowedFields(['date', 'amount', 'category', 'description', 'uid', 'id', 'createdAt']) &&
+             isValidDateString(data.date) &&
+             data.amount is number && data.amount >= 0 &&
+             data.category is string &&
+             data.description is string && data.description.size() <= 200 &&
+             data.uid == request.auth.uid;
+    }
+
+    function isValidFridgeItem(data) {
+      return hasRequiredFields(['name', 'quantity', 'unit', 'category', 'uid']) &&
+             hasOnlyAllowedFields(['name', 'expiryDate', 'quantity', 'unit', 'category', 'uid', 'id', 'expiryType', 'createdAt', 'icon']) &&
+             data.name is string && data.name.size() <= 100 &&
+             (!('expiryDate' in data) || isValidDateString(data.expiryDate)) &&
+             data.quantity is number && data.quantity >= 0 &&
+             data.unit is string && data.unit.size() <= 20 &&
+             data.category is string &&
+             data.uid == request.auth.uid;
+    }
+
+    function isValidSupplyItem(data) {
+      return hasRequiredFields(['name', 'quantity', 'unit', 'minThreshold', 'category', 'uid']) &&
+             hasOnlyAllowedFields(['name', 'quantity', 'unit', 'minThreshold', 'category', 'uid', 'id', 'expiryDate', 'expiryType', 'createdAt', 'icon']) &&
+             data.name is string && data.name.size() <= 100 &&
+             data.quantity is number && data.quantity >= 0 &&
+             data.unit is string && data.unit.size() <= 20 &&
+             data.minThreshold is number && data.minThreshold >= 0 &&
+             data.category is string &&
+             (!('expiryDate' in data) || isValidDateString(data.expiryDate)) &&
+             data.uid == request.auth.uid;
+    }
+
+    function isValidMaintenanceTask(data) {
+      return hasRequiredFields(['title', 'lastDone', 'nextDue', 'uid']) &&
+             hasOnlyAllowedFields(['title', 'lastDone', 'nextDue', 'notes', 'uid', 'id', 'createdAt', 'icon', 'alertType', 'alertValue']) &&
+             data.title is string && data.title.size() <= 100 &&
+             isValidDateString(data.lastDone) &&
+             isValidDateString(data.nextDue) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+             (!('alertType' in data) || data.alertType is string) &&
+             (!('alertValue' in data) || data.alertValue is string || data.alertValue is number) &&
+             data.uid == request.auth.uid;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    
+    match /expenses/{expenseId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidExpense(request.resource.data);
+      allow update: if isDocOwner() && isValidExpense(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /fridgeItems/{itemId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidFridgeItem(request.resource.data);
+      allow update: if isDocOwner() && isValidFridgeItem(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /supplies/{supplyId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidSupplyItem(request.resource.data);
+      allow update: if isDocOwner() && isValidSupplyItem(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /maintenanceTasks/{taskId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidMaintenanceTask(request.resource.data);
+      allow update: if isDocOwner() && isValidMaintenanceTask(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create, update: if isOwner(userId) && 
+        (request.resource.data.role == 'user' || (resource != null && request.resource.data.role == resource.data.role) || isAdmin());
+    }
+
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}

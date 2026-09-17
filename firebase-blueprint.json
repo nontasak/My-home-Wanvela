@@ -1,0 +1,97 @@
+{
+  "entities": {
+    "Expense": {
+      "title": "Expense",
+      "description": "Household expense record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "amount": { "type": "number" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "uid": { "type": "string" }
+      },
+      "required": ["date", "amount", "category", "description", "uid"]
+    },
+    "FridgeItem": {
+      "title": "FridgeItem",
+      "description": "Item in the refrigerator",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "expiryDate": { "type": "string", "format": "date" },
+        "quantity": { "type": "string" },
+        "category": { "type": "string", "enum": ["ของสด", "เครื่องดื่ม", "เครื่องปรุง", "อื่นๆ"] },
+        "uid": { "type": "string" }
+      },
+      "required": ["name", "expiryDate", "quantity", "category", "uid"]
+    },
+    "SupplyItem": {
+      "title": "SupplyItem",
+      "description": "Household supply item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string" },
+        "minThreshold": { "type": "number" },
+        "category": { "type": "string", "enum": ["ของใช้", "ของกิน"] },
+        "uid": { "type": "string" }
+      },
+      "required": ["name", "quantity", "unit", "minThreshold", "category", "uid"]
+    },
+    "MaintenanceTask": {
+      "title": "MaintenanceTask",
+      "description": "Household maintenance task",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "lastDone": { "type": "string", "format": "date" },
+        "nextDue": { "type": "string", "format": "date" },
+        "notes": { "type": "string" },
+        "uid": { "type": "string" }
+      },
+      "required": ["title", "lastDone", "nextDue", "uid"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Collection of user profiles"
+    },
+    "/expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "Collection of household expenses"
+    },
+    "/fridgeItems/{itemId}": {
+      "schema": "FridgeItem",
+      "description": "Collection of items in the fridge"
+    },
+    "/supplies/{supplyId}": {
+      "schema": "SupplyItem",
+      "description": "Collection of household supplies"
+    },
+    "/maintenanceTasks/{taskId}": {
+      "schema": "MaintenanceTask",
+      "description": "Collection of maintenance tasks"
+    }
+  }
+}
