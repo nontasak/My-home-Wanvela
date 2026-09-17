@@ -501,7 +501,7 @@ function LoginScreen() {
         </button>
 
         <footer className="mt-8 text-center text-xs text-slate-400">
-          เวอร์ชั่น 5.2 17/09/69 10.01
+          เวอร์ชั่น 5.4 17/09/69 10.53
         </footer>
       </div>
     </div>
@@ -754,7 +754,7 @@ function MainApp() {
           {renderContent()}
         </div>
         <footer className="mt-12 py-4 text-center text-xs text-slate-400">
-          เวอร์ชั่น 5.3 17/09/69 10.13
+          เวอร์ชั่น 5.4 17/09/69 10.53
         </footer>
       </main>
     </div>
